@@ -167,14 +167,33 @@ _zsh_nvm_auto_use() {
 
   local node_version="$(nvm version)"
   local nvmrc_path="$(nvm_find_nvmrc)"
+  local is_nodeversion_file=false
+
+  if [[ ! -n "$nvmrc_path" ]]; then
+    local nodeversion_path="$(git rev-parse --show-toplevel 2>/dev/null)/.node-version"
+    if [[ -f $nodeversion_path ]] then
+      is_nodeversion_file=true
+      nvmrc_path="$nodeversion_path"
+    fi
+  fi
 
   if [[ -n "$nvmrc_path" ]]; then
+    local raw_node_version="$(cat "$nvmrc_path")"
     local nvmrc_node_version="$(nvm version $(cat "$nvmrc_path"))"
 
     if [[ "$nvmrc_node_version" = "N/A" ]]; then
-      nvm install && export NVM_AUTO_USE_ACTIVE=true
+      if [[ "$is_nodeversion_file" == true ]]; then
+        nvm install "$raw_node_version" && export NVM_AUTO_USE_ACTIVE=true
+      else
+        nvm install && export NVM_AUTO_USE_ACTIVE=true
+      fi
     elif [[ "$nvmrc_node_version" != "$node_version" ]]; then
-      nvm use && export NVM_AUTO_USE_ACTIVE=true
+      if [[ "$is_nodeversion_file" == true ]]; then
+        echo "Found '$nvmrc_path' with version <$raw_node_version>"
+        nvm use $nvmrc_node_version && export NVM_AUTO_USE_ACTIVE=true
+      else
+        nvm use && export NVM_AUTO_USE_ACTIVE=true
+      fi
     fi
   elif [[ "$node_version" != "$(nvm version default)" ]] && [[ "$NVM_AUTO_USE_ACTIVE" = true ]]; then
     echo "Reverting to nvm default version"
@@ -216,7 +235,7 @@ if [[ "$ZSH_NVM_NO_LOAD" != true ]]; then
 
     # Enable completion
     [[ "$NVM_COMPLETION" == true ]] && _zsh_nvm_completion
-    
+
     # Auto use nvm on chpwd
     [[ "$NVM_AUTO_USE" == true ]] && add-zsh-hook chpwd _zsh_nvm_auto_use && _zsh_nvm_auto_use
   fi

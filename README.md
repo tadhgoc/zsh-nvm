@@ -8,6 +8,8 @@ The plugin will install the latest stable release of `nvm` if you don't already 
 
 Although this is written as a zsh plugin, it also works with bash if you follow the [manual installation instructions](#manually).
 
+This fork updates the auto use function to read a .node-version file if it exists (and a .nvmrc file doesn't)
+
 ## Usage
 
 Once the plugin's installed `nvm` will be available. You'll probably want to load this as one of your first plugins so `node`/`npm` is available for any other plugins that may require them.
